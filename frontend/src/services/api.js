@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: '/api' })
+const api = axios.create({ baseURL: '/api/v1' })
 
 api.interceptors.request.use((config) => {
   const raw = localStorage.getItem('auth-storage')
@@ -23,7 +23,11 @@ api.interceptors.response.use(
 )
 
 // Auth
-export const login = (data) => api.post('/auth/login', data)
+export const login = ({ username, password }) =>
+  axios.post('/api/auth/token',
+    new URLSearchParams({ username, password }),
+    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  )
 export const register = (data) => api.post('/auth/register', data)
 
 // Cameras

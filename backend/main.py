@@ -2,7 +2,6 @@
 public.safeV3 — FastAPI application entry point.
 """
 
-import asyncio
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -15,21 +14,21 @@ from loguru import logger
 
 from app.core.config import settings
 from app.core.logging import setup_logging
-from app.api.v1 import router as api_v1_router
 from app.services.stream_manager import stream_manager
-from app.db.session import engine, Base
+from app.db.session import engine
 
-from app.api.routes.auth import router as auth_router
+# ── Router imports (ONLY from app/api/v1, no duplicates) ─────────────────────
+from app.api.v1 import router as api_v1_router
+from app.api.v1.auth import router as auth_router
+from app.api.v1.cameras import router as cameras_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup / shutdown lifecycle."""
-    # ── Startup ──────────────────────────────────────────────────────────────
     setup_logging()
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
 
-    # Ensure report output dir exists
     os.makedirs(settings.REPORT_OUTPUT_DIR, exist_ok=True)
     os.makedirs("./logs", exist_ok=True)
 
@@ -58,13 +57,13 @@ async def lifespan(app: FastAPI):
     logger.info("Application ready")
     yield
 
-    # ── Shutdown ─────────────────────────────────────────────────────────────
     logger.info("Shutting down streams...")
     await stream_manager.stop_all()
     await engine.dispose()
     logger.info("Shutdown complete")
 
 
+# ── Create app FIRST ──────────────────────────────────────────────────────────
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -85,21 +84,24 @@ app.add_middleware(
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-app.include_router(api_v1_router, prefix="/api/v1")
-app.include_router(auth_router, prefix="/api/auth", tags=["Auth-Alias"])
+# ── Routers (ALL after app is created) ───────────────────────────────────────
+app.include_router(api_v1_router,  prefix="/api/v1")
+app.include_router(auth_router,    prefix="/api/auth",    tags=["Auth-Alias"])
+app.include_router(cameras_router, prefix="/api/cameras", tags=["Cameras-Alias"])
 
-
+# ── Static files ──────────────────────────────────────────────────────────────
 os.makedirs(settings.REPORT_OUTPUT_DIR, exist_ok=True)
 app.mount("/reports", StaticFiles(directory=settings.REPORT_OUTPUT_DIR), name="reports")
 
+# ── WebSocket legacy endpoint ─────────────────────────────────────────────────
 from app.api.v1.websocket import websocket_endpoint
 
 @app.websocket("/ws/live")
 async def websocket_live_route(websocket: WebSocket):
-    """Legacy /ws/live endpoint for frontend compatibility"""
     await websocket_endpoint(websocket)
 
 
+# ── Health check ──────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
     stream_status = await stream_manager.get_all_status()

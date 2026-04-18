@@ -5,6 +5,8 @@ import { useAuthStore } from '../store'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
+import myLogo from '../../src/public.safe.png'
+
 export default function Login() {
   const [form, setForm] = useState({ username: '', password: '' })
   const [showPw, setShowPw] = useState(false)
@@ -50,7 +52,7 @@ export default function Login() {
             <Shield size={28} style={{ color: 'var(--accent-cyan)' }} />
           </div>
           <h1 className="font-display font-bold text-2xl" style={{ color: 'var(--text-primary)' }}>
-            public.safe<span style={{ color: 'var(--accent-cyan)' }}>V3</span>
+            public.Labs<span style={{ color: 'var(--accent-cyan)' }}></span>
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Surveillance Intelligence Platform
@@ -98,9 +100,6 @@ export default function Login() {
           </form>
         </div>
 
-        <p className="text-center text-xs mt-5" style={{ color: 'var(--text-muted)' }}>
-          First run? POST to <span className="font-mono">/api/auth/create-admin</span> to create your account.
-        </p>
       </div>
     </div>
   )

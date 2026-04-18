@@ -5,6 +5,7 @@ import {
 import { useAuthStore, useCameraStore } from '../../store'
 import { useClock } from '../../hooks/useClock'
 
+// Замените './logo.png' на путь к вашему изображению (размером 64x64 пикселя)
 import myLogo from '../../../src/public.safe.png'
 
 const NAV = [
